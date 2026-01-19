@@ -1,7 +1,7 @@
 [project]
 name = "tone_inference"
 version = "0.1.0"
-description = "Add your description here"
+description = "tone inference service"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

@@ -1,0 +1,54 @@
+stages:
+  - build
+  - update
+
+build_image:
+  stage: build
+  image: docker:27.2
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+    DOCKER_TLS_CERTDIR: ""
+  script: |
+    set -e  # Fail on any error
+    
+    # Login to container registry (required for both tag and branch builds)
+    echo "Logging into container registry"
+    echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+    VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+    echo "Deteced version $VERSION"
+    IMAGE="$CI_REGISTRY_IMAGE:$VERSION" 
+    
+    echo "Building image $IMAGE"
+    docker build -t "$IMAGE" .
+    echo "Pushing $IMAGE"
+    docker push "$IMAGE"
+update_chart:
+  stage: update
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git curl yq
+    - git config --global user.email "ci@gitlab.vodovoz.moscow"
+    - git config --global user.name "GitLab CI"
+  script: |
+    set -e
+
+    NEW_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+
+    git clone http://$GIT_USER:$GIT_TOKEN@gitlab.vodovoz.moscow/vodovoz_tech/tone_chart.git
+    cd tone_chart
+  
+    CURRENT_VERSION=$(yq '.appVersion' Chart.yaml)
+    echo "Current chart version: $CURRENT_VERSION"
+    
+    if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+      echo "No update needed: chart appVersion already matches."
+      exit 0
+    fi
+    
+    echo "Updating appVersion to $NEW_VERSION"
+    yq -i ".appVersion = \"$NEW_VERSION\"" Chart.yaml
+
+    git add Chart.yaml
+    git commit -m "chore: bump chart version to $NEW_VERSION"
+    git push origin main
