@@ -1,0 +1,18 @@
+[project]
+name = "tone_inference"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.128.0",
+    "hf-transfer>=0.1.9",
+    "huggingface-hub[hf-xet]>=0.36.0",
+    "librosa>=0.11.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "python-multipart>=0.0.21",
+    "soundfile>=0.13.1",
+    "tone @ git+https://github.com/voicekit-team/T-one.git",
+    "uvicorn>=0.40.0",
+]
